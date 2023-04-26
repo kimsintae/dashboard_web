@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+    <head>
+        <meta charset="utf-8" />
+        <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+        <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
+        <meta name="description" content="" />
+        <meta name="author" content="" />
+        <title>Dashboard - Index</title>
+        <link href="https://cdn.jsdelivr.net/npm/simple-datatables@latest/dist/style.css" rel="stylesheet" />
+        <link th:href="@{/css/styles.css}" rel="stylesheet" />
+        <link th:href="@{/css/common.css}" rel="stylesheet" />
+        <!-- <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ol@v7.3.0/ol.css"> -->
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/openlayers/openlayers.github.io@master/en/v6.4.3/css/ol.css">
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.3/font/bootstrap-icons.css">
+    </head>
+    <body class="sb-nav-fixed bg-dark">
+        <!-- 블로킹 박스 -->
+        <div class="block-box" id="initBlockBox">
+            <div style="position: relative;text-align: center;margin-top: 22%;color: white;margin-left: 13%;font-size: 20px;">조회 버튼을 눌러 대시보드를 시작하세요.</div>
+        </div>
+        <!-- 경고 모달창 -->
+        <div class="modal fade" id="alertModal" tabindex="-1" aria-labelledby="alertModalLabel" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="alert alert-danger d-flex align-items-center" role="alert">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="25" height="16" fill="currentColor" class="bi bi-exclamation-triangle-fill" viewBox="0 0 16 16">
+                        <path d="M8.982 1.566a1.13 1.13 0 0 0-1.96 0L.165 13.233c-.457.778.091 1.767.98 1.767h13.713c.889 0 1.438-.99.98-1.767L8.982 1.566zM8 5c.535 0 .954.462.9.995l-.35 3.507a.552.552 0 0 1-1.1 0L7.1 5.995A.905.905 0 0 1 8 5zm.002 6a1 1 0 1 1 0 2 1 1 0 0 1 0-2z"/>
+                      </svg>
+                    <div class="alert-message">
+                    </div>
+                  </div>
+            </div>
+        </div>
+        <!--모달창-->
+        <div class="modal fade" id="exampleModalLg" tabindex="-1" aria-labelledby="exampleModalLgLabel" style="display: none;" aria-hidden="true">
+            <div class="modal-dialog modal-lg">
+              <div class="modal-content">
+                <div class="modal-header">
+                  <h5 class="modal-title h4" id="exampleModalLgLabel">정보</h5>
+                  <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body" id="topToolTipBody">
+                </div>
+              </div>
+            </div>
+          </div>
+
+        <!--툴팁 -->
+        <div id="yearChartToolipBox" class="tooltip" style="width: 100px;background: rgb(0 0 0);text-align: center;padding: 5px;opacity: 0;left: 1555px;top: 337px;height: 50px;color: white; border-radius: 15px;"></div>
+        <div id="goverChartToolipBox" class="tooltip" style="width: 150px;background: rgb(0 0 0);text-align: center;padding: 5px;opacity: 0;left: 1555px;top: 337px;height: 50px;color: white; border-radius: 15px;"></div>
+        <div id="radarCharToolipBox" class="tooltip" style="width: 150px;background: rgb(0 0 0);text-align: center;padding: 5px;opacity: 0;left: 1555px;top: 337px;height: 50px;color: white; border-radius: 15px;"></div>
+        <nav class="sb-topnav navbar navbar-expand navbar-dark bg-dark">
+            <!-- Navbar Brand-->
+            <a class="navbar-brand ps-3 fs-6" href="index.html">국정운영 </br>공간정보정책 평가도구</a>
+            <!-- Sidebar Toggle-->
+            <button class="btn btn-link btn-lg order-1 order-lg-0 me-4 me-lg-0" id="sidebarToggle" href="#!"><i class="bi bi-filter-square"></i></button>
+            <!-- Navbar Search-->
+            <div class="row" style="position: absolute; right: 50px;">
+                <div style="color:white;">
+                    <div style="display: inline-block;" data-value="info" class="top-tooltip-icon">대시보드 기획의도 설명 <i class="bi bi-info-circle"></i></div>
+                    &nbsp&nbsp&nbsp&nbsp&nbsp
+                    <div style="display: inline-block;" data-value="data" class="top-tooltip-icon">데이터 출처 <i class="bi bi-database"></i></div>
+                </div>
+                
+            </div>
+        </nav>
+
+        <!-- left nav bar-->
+        <div id="layoutSidenav">
+            <div id="layoutSidenav_nav">
+                <nav class="sb-sidenav accordion sb-sidenav-dark" id="sidenavAccordion">
+                    <div class="sb-sidenav-menu">
+                        <div class="nav ms-3">
+                            <div class="gikawn-box">
+                                <div class="sb-sidenav-menu-heading fs-5 ps-0 filter-header">- 기관유형</div>
+                                <div class="row col-sm-12">
+                                    <input type="radio" class="btn-check" name="gikawnTpye" id="partial" value="partial" autocomplete="off" checked><label class="btn btn-outline-primary w-50 filter-btn" for="partial">지자체</label>
+                                    <input type="radio" class="btn-check" name="gikawnTpye" id="government" value="government" autocomplete="off"><label class="btn btn-outline-primary w-50 filter-btn" for="government">중앙부처</label>
+                                </div>
+                            </div>
+
+                            <div class="gikwan-zone-box" id="zoneTypeDiv">
+                                <div class="sb-sidenav-menu-heading fs-5 ps-0 filter-header">- 지역선택</div>
+                                <div class="row col-sm-12">
+                                    <select id="zoneType" class="form-select form-select-sm text-center mb-1">
+                                        <option value="42" selected="">강원도</option>
+                                        <option value="41">경기도</option>
+                                        <option value="48">경상남도</option>
+                                        <option value="47">경상북도</option>
+                                        <option value="29">광주광역시</option>
+                                        <option value="27">대구광역시</option>
+                                        <option value="30">대전광역시</option>
+                                        <option value="26">부산광역시</option>
+                                        <option value="11" selected>서울특별시</option>
+                                        <option value="36">세종특별자치시</option>
+                                        <option value="31">울산광역시</option>
+                                        <option value="28">인천광역시</option>
+                                        <option value="46">전라남도</option>
+                                        <option value="45">전라북도</option>
+                                        <option value="50">제주특별자치도</option>
+                                        <option value="44">충청남도</option>
+                                        <option value="43">충청북도</option>
+                                    </select>
+
+                                    <select id="zoneSGGType" class="form-select form-select-sm text-center">
+                                        <option value="0">전체</option>
+                                        <option value="27200">남구</option>
+                                        <option value="27290">달서구</option>
+                                        <option value="27710">달성군</option>
+                                        <option value="27140">동구</option>
+                                        <option value="27230">북구</option>
+                                        <option value="27170">서구</option>
+                                        <option value="27260">수성구</option>
+                                        <option value="27110">중구</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="central-box" id="governmentTypeDiv">
+                                <div class="sb-sidenav-menu-heading fs-5 ps-0 filter-header">- 중앙부처</div>
+                                <div class="row col-sm-12">
+                                    <select class="form-select form-select-sm text-center" id="insttType">
+                                        <option value="">국토교통부</option>
+                                        <option value="">행정안전부</option>
+                                        <option value="">기획재정부</option>
+                                        <option value="">고용노동부</option>
+                                        <option value="">환경부</option>
+                                        <option value="">해양수산부</option>
+                                    </select>
+                                </div>
+                            </div>
+                            
+                            <div class="businType-box">
+                                <div class="sb-sidenav-menu-heading fs-5 ps-0 filter-header">- 사업유형</div>
+                                <div class="row col-sm-12">
+                                    <select class="form-select form-select-sm text-center" id="bsnsType">
+                                        <option value="BSNS_TY_A">공간정보구축</option>
+                                        <option value="BSNS_TY_B">공간정보갱신</option>
+                                        <option value="BSNS_TY_C">시스템구축고도화</option>
+                                        <option value="BSNS_TY_D">시스템운영유지관리</option>
+                                        <option value="BSNS_TY_E">공간정보활용</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="analyType-box">
+                            <div class="sb-sidenav-menu-heading fs-5 ps-0 filter-header">- 통계유형</div>
+                                <div class="row col-sm-12">
+                                    <input type="checkbox" name="statsType" value="STATS00000" class="btn-check statics-btn" id="staticsAll" autocomplete="off"><label class="btn btn-outline-primary filter-btn" for="staticsAll">전체</label>
+                                    <input type="checkbox" name="statsType" value="STATS10000" class="btn-check statics-btn" id="staticsData" autocomplete="off"><label class="btn btn-outline-primary w-50 filter-btn" for="staticsData">데이터</label>
+                                    <input type="checkbox" name="statsType" value="STATS20000" class="btn-check statics-btn" id="staticsStandard" autocomplete="off"><label class="btn btn-outline-primary w-50 filter-btn" for="staticsStandard">표준</label>
+                                    <input type="checkbox" name="statsType" value="STATS30000" class="btn-check statics-btn" id="staticsDistr" autocomplete="off"><label class="btn btn-outline-primary  w-50 filter-btn" for="staticsDistr">유통</label>
+                                    <input type="checkbox" name="statsType" value="STATS40000" class="btn-check statics-btn" id="staticsTech" autocomplete="off"><label class="btn btn-outline-primary w-50 filter-btn" for="staticsTech">기술</label>
+                                    <input type="checkbox" name="statsType" value="STATS60000" class="btn-check statics-btn" id="staticsIndus" autocomplete="off"><label class="btn btn-outline-primary w-50 filter-btn" for="staticsIndus">산업육성</label>
+                                    <input type="checkbox" name="statsType" value="STATS50000" class="btn-check statics-btn" id="staticsManpower" autocomplete="off"><label class="btn btn-outline-primary w-50 filter-btn" for="staticsManpower">인력양성</label>
+                                    <input type="checkbox" name="statsType" value="STATS70000" class="btn-check statics-btn" id="staticsLaw" autocomplete="off"><label class="btn btn-outline-primary w-50 filter-btn" for="staticsLaw">법제도</label>
+                                </div>
+                            </div>
+
+                            <div class="periodType-box">
+                                <div class="sb-sidenav-menu-heading fs-5 ps-0 filter-header">- 기준연도</div>
+                                <div class="row col-sm-12">
+                                    <select class="form-select form-select-sm text-center w-100 mb-2" id="planType">
+                                        <option value="2010">1차</option>
+                                        <option value="2011">2차</option>
+                                        <option value="2012">3차</option>
+                                        <option value="2013">4차</option>
+                                        <option value="2014">5차</option>
+                                    </select>
+                                    <select class="form-select form-select-sm text-center w-40" id="planBeginYear">
+                                        <option value="2010">2010</option>
+                                        <option value="2011">2011</option>
+                                        <option value="2012">2012</option>
+                                        <option value="2013">2013</option>
+                                        <option value="2014">2014</option>
+                                    </select>
+                                    <span class="w-20 text-center">
+                                        ~
+                                    </span>
+                                    <select class="form-select form-select-sm text-center w-40" id="planEndYear">
+                                        <option value="2010">2010</option>
+                                        <option value="2011">2011</option>
+                                        <option value="2012">2012</option>
+                                        <option value="2013">2013</option>
+                                        <option value="2014">2014</option>
+                                    </select> 
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="sb-sidenav-footer">
+                        <button id="analyBtn" type="button" class=" btn-primary w-100 h-100 mb-2">조회</button>
+                    </div>
+                </nav>
+            </div>
+
+            <!-- Content -->
+            <div id="layoutSidenav_content">
+                <main class="mt-3">
+                    <div class="container-fluid px-4">
+                        <!-- row1 -->
+                        <div class="row vh-55">
+                            <div class="col-xl-7">
+                                <div class="card" id="mapDiv">
+                                    <div class="card-header">
+                                        
+                                        <i class="fa-solid fa-earth-asia"></i>
+                                        지자체별 상황
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="map-loading-bar">
+                                            <div class="spinner-border text-primary" role="status" style="width: 4rem;height: 4rem;position: relative;left: 45%;top: 40%;">
+                                                <span class="visually-hidden">Loading...</span>
+                                            </div>
+                                        </div>
+                                        <div id="mapLegend" style="display: none; margin-top:5px;text-align: center;border: 2px solid #424242;z-index: 99;position: absolute;top: 40px;background-color: rgba(255,255,255,0.8);right: 10px;color: black;padding-left: 10px;padding-bottom: 5px;">
+                                            <span style="font-weight:bold;display: inline-block;border: 3px solid rgb(255, 0, 0);width: 20px;"></span> 
+                                            <span style="font-size: 12px; margin-right: 12px;">총 사업예산 계획(백만)</span>
+                                            <br>
+                                            <span style="font-weight:bold;display: inline-block;border: 3px solid rgb(252,221,97);width: 20px;"></span>
+                                            <span style="font-size: 12px; margin-right: 12px;">총 사업예산 집행(백만)</span>
+                                        </div>
+                                        <div id="map" class="vh-50">
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="card" style="display: none;" id="governmentDiv">
+                                    <div class="card-header">
+                                        <img src="/resources/img/sand-castle.png" width="18" height="20" style="padding-bottom: inherit;">
+                                        중앙부처별 상황
+                                    </div>
+                                    <div class="card-body">
+                                        <div id="government" class="vh-50">
+                                            <div id="centerGovBoxLegend" style="text-align: center; text-align: center; position: relative; top: 15px;">
+                                                <div style="width: 50%;margin-left: 25%;border: 1px solid #424242;background: #adcbe87a;">
+                                                    <span style="font-weight:bold;display: inline-block;border: 3px solid red;width: 20px;"></span>
+                                                    <span style="font-size: 12px;">사업예산비</span>
+                                                    <span style="font-weight:bold;display: inline-block;border: 3px solid blue;width: 20px; margin-left: 5px;"></span> 
+                                                    <span style="font-size: 12px; margin-right: 12px;">사업집행비</span>
+                                                    <span style="font-weight:bold;display: inline-block;border: 3px dotted red;width: 20px; margin-left: 5px;"></span> 
+                                                    <span style="font-size: 12px; margin-right: 12px;">사업집행비 평균</span>
+                                                    <span style="font-weight:bold;display: inline-block;border: 3px dotted blue;width: 20px;"></span>
+                                                    <span style="font-size: 12px;">사업예산비 평균</span>
+                                                </div>
+                                            </div>
+                                            <svg id="governmentChart"></svg>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-xl-5">
+                                <div class="row">
+                                    <div class="card" style="margin-bottom: 0.8rem;">
+                                        <div class="card-header">
+                                            <img src="/resources/img/word-cloud-icon-20.jpg" width="18" height="20" style="padding-bottom: inherit;">
+                                            워드클라우드
+                                        </div>
+                                        <div class="card-body">
+                                            <div id="wordCloud" class="vh-25"></div>
+                                        </div>
+                                    </div>        
+                                </div>
+                                <div class="row">
+                                    <div class="card mb-4">
+                                        <div class="card-header">
+                                            <i class="fas fa-chart-area me-1"></i>
+                                            연도별 사업현황
+                                            <!-- <div class="position-absolute top-0 end-0 align-middle">
+                                                <select class="form-select content-option-btn">
+                                                    <option value="1">원형</option>
+                                                    <option value="2">막대</option>
+                                                  </select>
+                                            </div> -->
+                                        </div>
+                                        <div class="card-body">
+                                            <div class="vh-20">
+                                                <svg id="lineChart1"></svg>
+                                            </div>
+                                            <!-- <div id="lineChart1" class="vh-20"></div> -->
+                                        </div>
+                                    </div>    
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- row2 -->
+                        <div class="row vh-35">
+                            <div class="col-xl-2">
+                                <div class="card">
+                                    <div class="card-header">
+                                        <i class="fas fa-chart-pie"></i>
+                                        종합차트(영향도)
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="row">
+                                            <!-- <div id="pieChart1" style="height:11.7vh;"></div>    -->
+                                            <div style="display: inline-block; width: 50px; height: 11.7vh; padding:0; margin-left: 25px;padding-top: 15%; font-weight: bold;">사회적</div>
+                                            <div style="display: inline-block; width: 60%; height:11.7vh;">
+                                                <svg id="pieChart1"></svg>
+                                            </div>
+                                        </div>
+                                        <div class="row">
+                                            <!-- <div id="pieChart2" style="height:11.7vh;"></div>    -->
+                                            <div style="display: inline-block; width: 50px; height: 11.7vh; padding:0; margin-left: 25px;padding-top: 15%; font-weight: bold;">경제적</div>
+                                            <div style="display: inline-block; width: 60%; height:11.7vh;">
+                                                <svg id="pieChart2"></svg>
+                                            </div>
+                                        </div>
+                                        <div class="row">
+                                            <!-- <div id="pieChart3" style="height:11.7vh;"></div>    -->
+                                            <div style="display: inline-block; width: 50px; height: 11.7vh; padding:0; margin-left: 25px;padding-top: 15%; font-weight: bold;">기술적</div>
+                                            <div style="display: inline-block; width: 60%; height:11.7vh;">
+                                                <svg id="pieChart3"></svg>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>   
+                            </div>
+                            <div class="col-xl-4 ps-0">
+                                <div class="card">
+                                    <div class="card-header">
+                                        <img src="/resources/img/hexagon-with-shapes-inside.png" width="18" height="20" style="padding-bottom: inherit;">
+                                        비교 차트(영향도)
+                                        <div class="position-absolute top-0 end-0 align-middle">
+                                        </div>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="vh-35">
+                                            <svg id="radarChart"></svg>
+                                            <div class="radar-option-box">
+                                                <div class="radar-option-legend" style="margin-top:5px;padding-bottom: 4px;text-align: center; background: #adcbe87a;">
+                                                    <span style="font-weight:bold;display: inline-block;border: 3px solid blue;width: 20px; margin-left: 5px;"></span> 
+                                                    <span style="font-size: 12px; margin-right: 12px;">평균값</span>
+                                                    <span style="font-weight:bold;display: inline-block;border: 3px solid red;width: 20px;"></span>
+                                                    <span style="font-size: 12px;">선택값</span>
+                                                </div>
+                                                <div class="radar-option-title">
+                                                    가중치 설정
+                                                </div>
+                                                <div class="radar-option-content">
+                                                    <div class="input-group mb-1">
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-xl-6 p-0">
+                                <div class="card">
+                                    <div class="card-header">
+                                        <i class="fas fa-table"></i>
+                                        사업 정보테이블
+                                    </div>
+                                    <div class="card-body vh-35 overflow-auto">
+                                        <table class="table table-striped table-hover fs-7">
+                                            <thead>
+                                                <tr>
+                                                    <th>사업명</th>
+                                                    <th>사업기관</th>
+                                                    <th>사업유형</th>
+                                                    <th>사업분류</th>
+                                                    <th>사업시작일</th>
+                                                    <th>사업종료일</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody id="infoTable">
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>   
+                            </div>
+                        </div>
+                    </div>
+                </main>
+            </div>
+        </div>
+
+        <script src="https://use.fontawesome.com/releases/v6.1.0/js/all.js" crossorigin="anonymous"></script>
+        <script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
+        <script src="https://d3js.org/d3.v7.min.js"></script>
+
+        <!-- <script src="/js/chart.js"></script> -->
+
+        <!-- 클라우드 차트-->
+        <script src="https://cdn.anychart.com/releases/8.11.0/js/anychart-core.min.js"></script>
+        <script src="https://cdn.anychart.com/releases/8.11.0/js/anychart-tag-cloud.min.js"></script>
+
+        <!-- 차트 -->
+        <script src="https://cdn.anychart.com/releases/8.11.0/js/anychart-base.min.js"></script>
+        <script src="https://cdn.anychart.com/releases/8.11.0/js/anychart-radar.min.js"></script>
+
+        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js" crossorigin="anonymous"></script>
+        <script th:src="@{/js/scripts.js}"></script>
+        <script th:src="@{/js/chart.js}"></script>
+        <script src="https://cdn.jsdelivr.net/npm/simple-datatables@latest" crossorigin="anonymous"></script>
+        <script th:src="@{/js/datatables-simple-demo.js}"></script>
+        <!-- <script src="https://cdn.jsdelivr.net/npm/ol@v7.3.0/dist/ol.js"></script> -->
+        <script src="https://cdn.jsdelivr.net/gh/openlayers/openlayers.github.io@master/en/v6.4.3/build/ol.js"></script>
+        <!-- proj4 -->
+        <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/proj4js/2.5.0/proj4.js"></script>
+        <script th:src="@{/js/ajax_event.js}"></script>
+        <script th:src="@{/js/main_event.js}"></script>
+        <script th:src="@{/js/map_event.js}"></script>
+        <script th:src="@{/js/filter_event.js}"></script>
+        <script src="https://cdn.jsdelivr.net/npm/ol-ext@4.0.6/dist/ol-ext.min.js"></script>
+        
+    </body>
+</html>
